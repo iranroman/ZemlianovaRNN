@@ -12,7 +12,7 @@ class ZemlianovaRNN(nn.Module):
         self.input_dim = input_dim
 
         # Define weights and biases
-        W_rec_initial = torch.randn(hidden_dim, hidden_dim) * 0.001
+        W_rec_initial = torch.rand(hidden_dim, hidden_dim) * 0.001
         self.W_rec = nn.Parameter(W_rec_initial)
         with torch.no_grad():
             self.W_rec.fill_diagonal_(0)
@@ -30,11 +30,11 @@ class ZemlianovaRNN(nn.Module):
         outputs = []
         for t in range(input.size(1)):  # process each time step
             noise = torch.sqrt(torch.tensor(2 * self.tau * (self.sigma_rec ** 2))) * torch.randn_like(hidden)
-            noise.to(device)
-            hidden = (-hidden + torch.mm(input[:, t], self.W_in) + torch.mm(hidden, torch.abs(self.W_rec) * self.neuron_mask[:,None]) + self.b_rec + noise) / self.tau
-            hidden = nn.ReLU()(hidden)  # Firing rates as ReLU activations
-            hidden = hidden
-            output = torch.mm(hidden, self.W_out) + self.b_out                              
+
+            hidden = (-hidden + torch.mm(input[:, t], self.W_in) + torch.mm(nn.ReLU()(hidden), torch.sqrt(self.W_rec ** 2) * self.neuron_mask[:,None]) + self.b_rec + noise) / self.tau
+
+            output = torch.mm(nn.ReLU()(hidden), self.W_out) + self.b_out                              
+
             outputs.append(output)
 
         outputs = torch.stack(outputs, dim=1)

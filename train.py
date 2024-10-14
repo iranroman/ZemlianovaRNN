@@ -20,7 +20,9 @@ def train(model, dataloader, optimizer, criterion, epochs, save_path):
   
             # Initialize hidden state            
             batch_size = inputs.shape[0]
-            hidden = model.init_hidden(batch_size)
+
+            hidden = model.init_hidden(batch_size).to(device)
+            model.neuron_mask = model.neuron_mask.to(device)
 
             # Forward pass
             outputs, hidden = model(inputs, hidden)
@@ -51,7 +53,7 @@ def main(PERIODS, BATCH_SIZE, LR, EPOCHS, SAVE_PATH):
     model = ZemlianovaRNN(input_dim=2, hidden_dim=500, output_dim=1, tau=10, sigma_rec=0.01).to(device)
 
     # Set up the DataLoader
-    dataset = PulseStimuliDataset(PERIODS, size=BATCH_SIZE)  # Adjust size as needed
+    dataset = PulseStimuliDataset(PERIODS, size=BATCH_SIZE)
     dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 
     # Define the optimizer and loss function
