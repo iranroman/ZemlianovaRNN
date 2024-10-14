@@ -9,7 +9,7 @@ from zrnn.datasets import PulseStimuliDataset
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print('training with device', device)
 
-def train(model, dataloader, optimizer, criterion, epochs=100, save_path='best_model.pth'):
+def train(model, dataloader, optimizer, criterion, epochs, save_path):
     model.train()  # Set the model to training mode
     min_loss = float('inf')  # Initialize the minimum loss to a large value
 
@@ -45,7 +45,7 @@ def train(model, dataloader, optimizer, criterion, epochs=100, save_path='best_m
             torch.save(model.state_dict(), save_path)
             print(f"Model saved with improvement at epoch {epoch+1} with loss {min_loss}")
 
-def main(PERIODS, BATCH_SIZE, LR):
+def main(PERIODS, BATCH_SIZE, LR, EPOCHS, SAVE_PATH):
     
     # Initialize the model
     model = ZemlianovaRNN(input_dim=2, hidden_dim=500, output_dim=1, tau=10, sigma_rec=0.01).to(device)
@@ -59,7 +59,7 @@ def main(PERIODS, BATCH_SIZE, LR):
     criterion = nn.MSELoss()
 
     # Assuming the DataLoader and dataset are defined and loaded as previously shown
-    train(model, dataloader, optimizer, criterion, epochs=EPOCHS)
+    train(model, dataloader, optimizer, criterion, EPOCHS, SAVE_PATH)
 
 
 if __name__ == "__main__":
@@ -67,4 +67,5 @@ if __name__ == "__main__":
     BATCH_SIZE = 32
     LR = 0.001
     EPOCHS = 10000
-    main(PERIODS, BATCH_SIZE, LR)
+    SAVE_PATH = 'best_model.pth'
+    main(PERIODS, BATCH_SIZE, LR, EPOCHS, SAVE_PATH)
