@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-def generate_stimuli(period, T_onset, duration=2.0, dt=0.001, one_dur=0.01):
+def generate_stimuli(period, T_onset, duration=4.0, dt=0.001, one_dur=0.01):
     t = np.arange(0, duration, dt)
     T_tones = np.arange(0, 1, period)  # Tone times from 0 to 1 second in steps of 'period'
     
@@ -22,7 +22,7 @@ def generate_stimuli(period, T_onset, duration=2.0, dt=0.001, one_dur=0.01):
     return t, I_stim, I_cc, z_t
 
 class PulseStimuliDataset(Dataset):
-    def __init__(self, periods, min_onset=0, max_onset=0.1, duration=2.0, dt=0.001, one_dur=0.01, size=1000):
+    def __init__(self, periods, min_onset=0, max_onset=0.1, duration=4.0, dt=0.001, one_dur=0.01, size=1000):
         self.periods = periods
         self.min_onset = min_onset
         self.max_onset = max_onset

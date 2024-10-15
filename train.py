@@ -10,12 +10,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print('training with device', device)
 
 def train(model, dataloader, optimizer, criterion, epochs, save_path):
+
     model.train()  # Set the model to training mode
     min_loss = float('inf')  # Initialize the minimum loss to a large value
 
     for epoch in range(epochs):
+
         total_loss = 0
+
         for inputs, targets in dataloader:
+
             inputs, targets = inputs.to(device), targets.to(device)  # Move data to GPU
   
             # Initialize hidden state            
