@@ -1,0 +1,19 @@
+model:
+  type: "RNN"  # Can be "RNN" or "ZemlianovaRNN"
+  input_dim: 2
+  hidden_dim: 500
+  output_dim: 1
+  tau: 0.01
+  dt: 0.01
+  sigma_rec: 0.01
+
+training:
+  periods: [0.500, 0.333, 0.250, 0.200, 0.166, 0.143, 0.125]
+  batch_size: 512
+  learning_rate: 0.001
+  epochs: 10000
+  save_path: "best_model.pth"
+  early_stopping_loss: 0.01
+
+plotting:
+  enable: True

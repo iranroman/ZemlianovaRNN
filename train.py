@@ -2,76 +2,119 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.optim as optim
-
-from zrnn.models import ZemlianovaRNN
+import matplotlib.pyplot as plt
+import yaml
+import os
+from zrnn.models import ZemlianovaRNN, RNN
 from zrnn.datasets import PulseStimuliDataset
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print('training with device', device)
-
-def train(model, dataloader, optimizer, criterion, epochs, save_path):
-
+def train(model, dataloader, optimizer, criterion, config, device):
     model.train()  # Set the model to training mode
     min_loss = float('inf')  # Initialize the minimum loss to a large value
 
-    for epoch in range(epochs):
-
+    for epoch in range(config['training']['epochs']):
         total_loss = 0
-
-        for inputs, targets in dataloader:
-
+        for inputs, targets, _ in dataloader:
             inputs, targets = inputs.to(device), targets.to(device)  # Move data to GPU
-  
-            # Initialize hidden state            
             batch_size = inputs.shape[0]
+            hidden = model.initHidden(batch_size).to(device)
+            outputs = []
 
-            hidden = model.init_hidden(batch_size).to(device)
-            model.neuron_mask = model.neuron_mask.to(device)
+            for t in range(inputs.size(1)):  # process each time step
+                output, hidden = model(inputs[:, t], hidden)
+                outputs.append(output)
 
-            # Forward pass
-            outputs, hidden = model(inputs, hidden)
-
-            # Compute loss (comparing all outputs to targets across all time steps)
-            loss = torch.sqrt(criterion(outputs[...,0], targets))
-
-            # Backpropagation
+            outputs = torch.stack(outputs, dim=1)
+            loss = criterion(outputs[..., 0], targets)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
             total_loss += loss.item()
 
-        # Calculate average loss for the epoch
         avg_loss = total_loss / len(dataloader)
-        print(f'Epoch {epoch+1}/{epochs}, Loss: {avg_loss}')
+        print(f'Epoch {epoch+1}/{config['training']['epochs']}, Loss: {avg_loss}')
 
-        # Check if the current average loss is the lowest and save the model if so
         if avg_loss < min_loss:
             min_loss = avg_loss
-            torch.save(model.state_dict(), save_path)
+            torch.save(model.state_dict(), config['training']['save_path'])
             print(f"Model saved with improvement at epoch {epoch+1} with loss {min_loss}")
 
-def main(PERIODS, BATCH_SIZE, LR, EPOCHS, SAVE_PATH):
-    
-    # Initialize the model
-    model = ZemlianovaRNN(input_dim=2, hidden_dim=500, output_dim=1, tau=10, sigma_rec=0.01).to(device)
+        if avg_loss <= config['training']['early_stopping_loss']:
+            print("Early stopping threshold reached.")
+            break
 
-    # Set up the DataLoader
-    dataset = PulseStimuliDataset(PERIODS, size=BATCH_SIZE)
-    dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
+    return model
 
-    # Define the optimizer and loss function
-    optimizer = optim.Adam(model.parameters(), lr=LR)
+
+def plot_results(model, dataloader, config, device):
+    if not config['plotting']['enable']:
+        return
+
+    # Ensure directory for plots exists
+    plot_dir = 'plots'
+    os.makedirs(plot_dir, exist_ok=True)
+
+    model.eval()
+    with torch.no_grad():
+        for inputs, targets, periods in dataloader:
+            # Ensure we're handling the device placement
+            inputs, targets = inputs.to(device), targets.to(device)
+
+            # Initialize hidden states for the batch
+            hidden = model.initHidden(inputs.size(0)).to(device)
+            outputs = []
+
+            # Process each timestep in the sequence
+            for t in range(inputs.size(1)):
+                output, hidden = model(inputs[:, t, :], hidden)
+                outputs.append(output)
+
+            outputs = torch.stack(outputs, dim=1)  # [batch_size, seq_len, features]
+            outputs = outputs.squeeze(-1).cpu().numpy()  # Simplify if output features == 1
+            targets = targets.squeeze(-1).cpu().numpy()
+            inputs = inputs.squeeze(-1).cpu().numpy()
+
+            # Iterate over each sequence in the batch
+            for i, period in enumerate(periods.cpu().numpy()):
+                # Plot each period only once if they are the same in a batch
+                if i > 0 and period == periods[i - 1]:
+                    continue
+
+                fig, ax = plt.subplots(figsize=(10, 4))
+                ax.plot(outputs[i], label='Predictions')
+                ax.plot(targets[i], label='Targets')
+                ax.plot(inputs[i], label='Inputs')
+                ax.legend()
+                ax.set_title(f"Responses for Period {period:.3f} Seconds")
+                plt.savefig(os.path.join(plot_dir, f"Period_{period:.3f}_seconds.png"))
+                plt.close(fig)
+
+
+def main(config_path='config.yaml', model_type=None):
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+
+    if model_type:
+        # Overriding model type from the command line
+        config['model']['type'] = model_type
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print('Training with device:', device)
+
+    dataset = PulseStimuliDataset(config['training']['periods'], size=config['training']['batch_size'], dt=config['model']['dt'])
+    dataloader = DataLoader(dataset, batch_size=config['training']['batch_size'], shuffle=True, num_workers=0)
+
+    if config['model']['type'] == "RNN":
+        model = RNN(config['model']['input_dim'], config['model']['hidden_dim'], config['model']['output_dim'], config['model']['dt'], config['model']['tau']).to(device)
+    else:
+        model = ZemlianovaRNN(config['model']['input_dim'], config['model']['hidden_dim'], config['model']['output_dim'], config['model']['tau'], config['model']['sigma_rec'], config['model']['dt']).to(device)
+
+    optimizer = optim.Adam(model.parameters(), lr=config['training']['learning_rate'])
     criterion = nn.MSELoss()
 
-    # Assuming the DataLoader and dataset are defined and loaded as previously shown
-    train(model, dataloader, optimizer, criterion, EPOCHS, SAVE_PATH)
-
+    model = train(model, dataloader, optimizer, criterion, config, device)
+    plot_results(model, dataloader, config, device)
 
 if __name__ == "__main__":
-    PERIODS = [0.500, 0.333, 0.250, 0.200, 0.166, 0.143, 0.125]
-    BATCH_SIZE = 32
-    LR = 0.001
-    EPOCHS = 10000
-    SAVE_PATH = 'best_model.pth'
-    main(PERIODS, BATCH_SIZE, LR, EPOCHS, SAVE_PATH)
+    import fire
+    fire.Fire(main)
