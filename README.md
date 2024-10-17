@@ -17,19 +17,19 @@ This project is a **work in progress**. Currently, the repository includes an im
 ### Prerequisites
 Ensure you have Python 3.6+ and PyTorch installed. Dependencies can be installed via pip:
 
-\```bash
+```bash
 pip install -r requirements.txt
-\```
+```
 
 ### Training the Model
 To train the Vanilla RNN model, you can use the following command:
 
-\```bash
+```bash
 python train.py --model_type RNN
-\```
+```
 
 ### Configuration
-Modify the `config.yaml` file to set up different experimental settings or model parameters. Here is an example of what the config file might look like:
+Modify the `config.yaml` file to set up different experimental settings or model parameters.
 
 ## Contributing
 Contributions to the development of ZemlianovaRNN are welcome. Please submit a pull request or open an issue to discuss proposed changes or additions.
