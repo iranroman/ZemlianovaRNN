@@ -5,47 +5,63 @@ import torch.nn.functional as F
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class ZemlianovaRNN(nn.Module):
-    def __init__(self, input_dim, hidden_dim=500, output_dim=1, tau=0.01, sigma_rec=0.01, dt=0.01):
+    def __init__(self, input_size, hidden_size, output_size, dt, tau, excit_percent, sigma_rec=0.01):
         super().__init__()
-        self.hidden_dim = hidden_dim
+        self.hidden_size = hidden_size
+        self.dt = dt
         self.tau = tau
-        self.sigma_rec = sigma_rec
-        self.input_dim = input_dim
-        self.dt = dt  # Time step size for integration
+        self.excit_percent = excit_percent
 
-        # Define weights and biases
-        W_rec_initial = torch.rand(hidden_dim, hidden_dim) * 0.001
-        self.W_rec = nn.Parameter(W_rec_initial)
-        with torch.no_grad():
-            self.W_rec.fill_diagonal_(0)  # Ensuring no self-loops in recurrent connections
+        # Initialize weights and biases for input to hidden layer
+        self.w_ih = nn.Parameter(torch.Tensor(hidden_size, input_size))
+        self.b_ih = nn.Parameter(torch.Tensor(hidden_size))
 
-        self.W_in = nn.Parameter(torch.randn(input_dim, hidden_dim) * 0.001)
-        self.b_rec = nn.Parameter(torch.zeros(hidden_dim))
-        self.W_out = nn.Parameter(torch.randn(hidden_dim, output_dim) * 0.001)
-        self.b_out = nn.Parameter(torch.zeros(output_dim))
+        # Initialize weights and biases for hidden to hidden layer
+        self.w_hh = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
+        self.b_hh = nn.Parameter(torch.Tensor(hidden_size))
 
-        # Mask for excitatory and inhibitory neurons
-        self.neuron_mask = torch.ones(hidden_dim).to(device)
-        self.neuron_mask[int(0.8 * hidden_dim):] = -1
+        # Initialize weights and biases for hidden to output layer
+        self.w_ho = nn.Parameter(torch.Tensor(output_size, hidden_size))
+        self.b_ho = nn.Parameter(torch.Tensor(output_size))
 
-    def forward(self, input, hidden):
-        outputs = []
-        for t in range(input.size(1)):  # process each time step
-            noise = torch.sqrt(torch.tensor(2 * self.tau * (self.sigma_rec ** 2))) * torch.randn_like(hidden)
+        # Initialize all weights and biases
+        self.init_weights()
 
-            # Update hidden state with dt scaling in the dynamics
-            hidden_update = (-hidden + torch.mm(input[:, t], self.W_in) + torch.mm(F.relu(hidden), torch.sqrt(self.W_rec ** 2) * self.neuron_mask[:, None]) + self.b_rec + noise)
-            hidden = hidden + self.dt / self.tau * hidden_update
+        # Create masks for zeroing diagonal of w_hh and contain EI ratio
+        self.zero_diag_mask = torch.ones(hidden_size, hidden_size) - torch.eye(hidden_size)
+        self.EI_mask = torch.ones(hidden_size).to(device)
+        self.EI_mask[int(self.excit_percent * hidden_size):] = -1
 
-            # Compute output
-            output = torch.mm(F.relu(hidden), self.W_out) + self.b_out
-            outputs.append(output)
 
-        outputs = torch.stack(outputs, dim=1)
-        return outputs, hidden
+    def init_weights(self):
+        # Initialize weights using xavier uniform and biases to zero
+        nn.init.xavier_normal_(self.w_ih)
+        nn.init.constant_(self.b_ih, 0)
+        nn.init.xavier_normal_(self.w_hh)
+        nn.init.constant_(self.b_hh, 0)
+        nn.init.xavier_normal_(self.w_ho)
+        nn.init.constant_(self.b_ho, 0)
 
-    def init_hidden(self, batch_size):
-        return torch.zeros(batch_size, self.hidden_dim).to(device)
+    def forward(self, inputs, hidden):
+
+        # Zero out diagonal of w_hh each forward pass
+        w_hh_no_diag = self.w_hh * self.zero_diag_mask.to(self.w_hh.device)
+        w_hh_no_diag_p = torch.abs(w_hh_no_diag)
+        w_hh_EI = w_hh_no_diag_p * self.EI_mask
+
+        # Compute the hidden state
+        hidden_input = torch.matmul(inputs, self.w_ih.t()) + self.b_ih # removing this bias makes learning hard/impossible 
+        hidden_hidden = torch.matmul(F.relu(hidden), w_hh_EI.t()) + self.b_hh
+        hidden = (-hidden + hidden_input + hidden_hidden)  * (self.dt / self.tau)
+
+        # Compute the output
+        output = torch.matmul(F.relu(hidden), self.w_ho.t()) + self.b_ho
+        return output, hidden
+
+    def initHidden(self, batch_size):
+        return torch.zeros(batch_size, self.hidden_size).to(device)
+
+
 
 class RNN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, dt, tau):

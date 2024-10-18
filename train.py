@@ -38,6 +38,7 @@ def train(model, dataloader, optimizer, criterion, config, device):
             min_loss = avg_loss
             torch.save(model.state_dict(), config['training']['save_path'])
             print(f"Model saved with improvement at epoch {epoch+1} with loss {min_loss}")
+            plot_results(model, dataloader, config, device)
 
         if avg_loss <= config['training']['early_stopping_loss']:
             print("Early stopping threshold reached.")
@@ -74,10 +75,11 @@ def plot_results(model, dataloader, config, device):
             targets = targets.squeeze(-1).cpu().numpy()
             inputs = inputs.squeeze(-1).cpu().numpy()
 
+            plotted_periods = set()
             # Iterate over each sequence in the batch
             for i, period in enumerate(periods.cpu().numpy()):
                 # Plot each period only once if they are the same in a batch
-                if i > 0 and period == periods[i - 1]:
+                if period in plotted_periods:
                     continue
 
                 fig, ax = plt.subplots(figsize=(10, 4))
@@ -88,6 +90,8 @@ def plot_results(model, dataloader, config, device):
                 ax.set_title(f"Responses for Period {period:.3f} Seconds")
                 plt.savefig(os.path.join(plot_dir, f"Period_{period:.3f}_seconds.png"))
                 plt.close(fig)
+
+                plotted_periods.add(period)
 
 
 def main(config_path='config.yaml', model_type=None):
@@ -107,7 +111,7 @@ def main(config_path='config.yaml', model_type=None):
     if config['model']['type'] == "RNN":
         model = RNN(config['model']['input_dim'], config['model']['hidden_dim'], config['model']['output_dim'], config['model']['dt'], config['model']['tau']).to(device)
     else:
-        model = ZemlianovaRNN(config['model']['input_dim'], config['model']['hidden_dim'], config['model']['output_dim'], config['model']['tau'], config['model']['sigma_rec'], config['model']['dt']).to(device)
+        model = ZemlianovaRNN(config['model']['input_dim'], config['model']['hidden_dim'], config['model']['output_dim'], config['model']['dt'], config['model']['tau'], config['model']['excit_percent'], sigma_rec=config['model']['sigma_rec']).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=config['training']['learning_rate'])
     criterion = nn.MSELoss()
