@@ -32,6 +32,16 @@ python train.py --model_type ZemlianovaRNN
 
 This will save a `best_model.pth` when the training is complete. It will also create a folder called `plots` with examples of model activity for each of the periods included in the training set. 
 
+### Saving Model Outputs for Analysis After Training
+
+After training, you can run inference on the model to save outputs for further analysis using:
+
+```bash
+python drive_model_and_save_outputs.py
+```
+
+This script processes inputs based on the configured periods, detects peaks in the model’s output, and saves the model outputs, hidden states, and plots. These are stored in a directory named `model_outputs`. Each file is named to indicate which saved model activity corresponds to a specific stimulus period, making it easier to track and analyze the results.
+
 ### Configuration
 Modify the `config.yaml` file to set up different experimental settings or model parameters.
 
