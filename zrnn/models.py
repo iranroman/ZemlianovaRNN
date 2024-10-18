@@ -5,12 +5,14 @@ import torch.nn.functional as F
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class ZemlianovaRNN(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, dt, tau, excit_percent, sigma_rec=0.01):
+    def __init__(self, input_size, hidden_size, output_size, dt, tau, excit_percent, sigma_rec=0.01, sigma_input = 0.01):
         super().__init__()
         self.hidden_size = hidden_size
         self.dt = dt
         self.tau = tau
         self.excit_percent = excit_percent
+        self.sigma_rec = sigma_rec
+        self.sigma_input = sigma_input
 
         # Initialize weights and biases for input to hidden layer
         self.w_ih = nn.Parameter(torch.Tensor(hidden_size, input_size))
@@ -37,22 +39,29 @@ class ZemlianovaRNN(nn.Module):
         # Initialize weights using xavier uniform and biases to zero
         nn.init.xavier_normal_(self.w_ih)
         nn.init.constant_(self.b_ih, 0)
-        nn.init.xavier_normal_(self.w_hh)
+        nn.init.xavier_normal_(self.w_hh, gain=0.1)
         nn.init.constant_(self.b_hh, 0)
         nn.init.xavier_normal_(self.w_ho)
         nn.init.constant_(self.b_ho, 0)
 
     def forward(self, inputs, hidden):
 
+        # add noise to the input
+        input_noise = torch.sqrt(torch.tensor(2 * (self.dt / self.tau) * (self.sigma_input ** 2))) * torch.randn_like(inputs)
+        inputs = F.relu(inputs + input_noise)
+
+        # compute recurrent noise
+        rec_noise = torch.sqrt(torch.tensor(2 * (self.tau / self.dt) * (self.sigma_rec ** 2))) * torch.randn_like(hidden)
+
         # Zero out diagonal of w_hh each forward pass
         w_hh_no_diag = self.w_hh * self.zero_diag_mask.to(self.w_hh.device)
-        w_hh_no_diag_p = torch.abs(w_hh_no_diag)
+        w_hh_no_diag_p = F.relu(w_hh_no_diag)
         w_hh_EI = w_hh_no_diag_p * self.EI_mask
 
         # Compute the hidden state
-        hidden_input = torch.matmul(inputs, self.w_ih.t()) + self.b_ih # removing this bias makes learning hard/impossible 
-        hidden_hidden = torch.matmul(F.relu(hidden), w_hh_EI.t()) + self.b_hh
-        hidden = (-hidden + hidden_input + hidden_hidden)  * (self.dt / self.tau)
+        hidden_input = torch.matmul(inputs, self.w_ih.t())
+        hidden_hidden = torch.matmul(F.relu(hidden), w_hh_EI.t()) + self.b_hh + rec_noise
+        hidden = hidden + (-hidden + hidden_input + hidden_hidden)  * (self.dt / self.tau)
 
         # Compute the output
         output = torch.matmul(F.relu(hidden), self.w_ho.t()) + self.b_ho

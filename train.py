@@ -38,7 +38,6 @@ def train(model, dataloader, optimizer, criterion, config, device):
             min_loss = avg_loss
             torch.save(model.state_dict(), config['training']['save_path'])
             print(f"Model saved with improvement at epoch {epoch+1} with loss {min_loss}")
-            plot_results(model, dataloader, config, device)
 
         if avg_loss <= config['training']['early_stopping_loss']:
             print("Early stopping threshold reached.")
@@ -50,6 +49,8 @@ def train(model, dataloader, optimizer, criterion, config, device):
 def plot_results(model, dataloader, config, device):
     if not config['plotting']['enable']:
         return
+
+    print('plotting some examples ...')
 
     # Ensure directory for plots exists
     plot_dir = 'plots'
@@ -92,6 +93,8 @@ def plot_results(model, dataloader, config, device):
                 plt.close(fig)
 
                 plotted_periods.add(period)
+
+    print('done plotting')
 
 
 def main(config_path='config.yaml', model_type=None):
