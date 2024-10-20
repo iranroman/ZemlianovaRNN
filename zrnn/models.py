@@ -40,6 +40,7 @@ class ZemlianovaRNN(nn.Module):
         nn.init.xavier_normal_(self.w_ih)
         nn.init.constant_(self.b_ih, 0)
         nn.init.xavier_normal_(self.w_hh, gain=0.1)
+        self.w_hh = nn.Parameter(F.relu(self.w_hh))
         nn.init.constant_(self.b_hh, 0)
         nn.init.xavier_normal_(self.w_ho)
         nn.init.constant_(self.b_ho, 0)
@@ -55,7 +56,7 @@ class ZemlianovaRNN(nn.Module):
 
         # Zero out diagonal of w_hh each forward pass
         w_hh_no_diag = self.w_hh * self.zero_diag_mask.to(self.w_hh.device)
-        w_hh_no_diag_p = F.relu(w_hh_no_diag)
+        w_hh_no_diag_p = torch.abs(w_hh_no_diag)
         w_hh_EI = w_hh_no_diag_p * self.EI_mask
 
         # Compute the hidden state

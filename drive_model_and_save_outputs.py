@@ -6,15 +6,13 @@ import numpy as np
 from scipy.signal import find_peaks, butter, filtfilt
 from zrnn.models import ZemlianovaRNN
 
+N_RANDOM_PERIODS = 100
+
 def generate_stimuli(period, T_onset, duration=52.0, dt=0.001, one_dur=0.01):
     t = np.arange(0, duration, dt)  # Time array from 0 to 52 seconds
     T_tones = np.arange(T_onset, T_onset + 1, period)  # Tone times within the first second after onset
 
-    I_stim = np.zeros_like(t)
-    for tone in T_tones:
-        start_time = tone
-        end_time = start_time + one_dur
-        I_stim[(t >= start_time) & (t < end_time)] = 1  # Activate stimulus during tone periods
+    I_stim = np.zeros_like(t) # here the pulse input is zeros
 
     I_cc = np.zeros_like(t)
     I_cc[t >= T_onset] = 0.1 / period  # Continuous cue starting at T_onset
@@ -85,10 +83,14 @@ def drive_model_and_save_outputs(model, periods, device, time_steps=52000, disca
 
         # Save data to files
         np.save(os.path.join(save_dir, f'valid_output_{period}.npy'), valid_outputs)
-        np.save(os.path.join(save_dir, f'peaks_{period}.npy'), valid_outputs[true_peaks])
+        np.save(os.path.join(save_dir, f'peaks_{period}.npy'), true_peaks)
         np.save(os.path.join(save_dir, f'hidden_states_{period}.npy'), np.array(hidden_states))
+        print(f'finished driving model and saving activity for period {period}')
 
-
+def sample_exponential_skew(num_samples, lam=5):
+    u = np.random.rand(num_samples)
+    skewed_samples = np.exp(-lam * (1 - u))
+    return skewed_samples
 
 def main(config_path='config.yaml', model_type=None):
     with open(config_path, 'r') as file:
@@ -101,7 +103,8 @@ def main(config_path='config.yaml', model_type=None):
     model.load_state_dict(torch.load(config['training']['save_path'], map_location=device))
     model.eval()
     
-    drive_model_and_save_outputs(model, config['training']['periods'], device)
+    # ADD a few extra randomly-generated periods
+    drive_model_and_save_outputs(model, config['training']['periods']+[round(v+0.1,3) for v in list(sample_exponential_skew(N_RANDOM_PERIODS))], device)
 
 if __name__ == "__main__":
     import fire
