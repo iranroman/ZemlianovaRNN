@@ -3,15 +3,12 @@
 ## Overview
 This repository contains the PyTorch implementation of the model described in the 2024 paper ["A Recurrent Neural Network for Rhythmic Timing"](https://www.biorxiv.org/content/10.1101/2024.05.24.595797v1.abstract) by Klavdia Zemlianova, Amit Bose, & John Rinzel. The model is designed to explore and demonstrate the neural mechanisms behind rhythmic timing.
 
-### Status
-This project is actively being developed. The repository now includes fully operational implementations of both the Vanilla RNN and the ZemlianovaRNN models.
-
 ## Features
-- **Vanilla RNN Implementation:** A standard RNN model which can be used as a baseline or for comparison.
 - **ZemlianovaRNN Implementation:** Fully implemented model based on the 2024 paper, designed to explore neural mechanisms of rhythmic timing.
 - **Dynamic Configuration:** Model parameters can be dynamically configured using YAML files or overridden via command-line arguments with Fire.
 - **Training and Evaluation Scripts:** Scripts to train the models and evaluate their performance are included, with the ability to plot and save results for further analysis.
 - **GPU Support:** Efficient training with CUDA, automatically adjusting based on available hardware.
+- **Vanilla RNN Implementation:** Also a standard RNN model which can be used as a baseline or for comparison.
 
 ## Getting Started
 
@@ -41,6 +38,22 @@ python drive_model_and_save_outputs.py
 ```
 
 This script processes inputs based on the configured periods, detects peaks in the model’s output, and saves the model outputs, hidden states, and plots. These are stored in a directory named `model_outputs`. Each file is named to indicate which saved model activity corresponds to a specific stimulus period, making it easier to track and analyze the results.
+
+### Analyzing and Visualizing Model Outputs
+Further analysis and visualization can be conducted by running:
+```bash
+python plot_fig1.py
+```
+This generates detailed plots illustrating the normalized firing rates and PCA trajectories:
+- **Normalized Firing Rates:** Units' firing rates are normalized between 0 and 1 and sorted by their maximal firing rate during the initial inter-tap interval (ITI). Units are colored by type—excitatory units in red and inhibitory in blue. Tap times are marked by vertical lines.
+  ![Normalized Firing Rates](README_figs/firing_rate_plot_0.2.png)
+
+- **PCA Trajectory Analysis:** 
+  - **Left Panel:** Shows unit trajectories in the top 3 PCA space, colored by stimulus frequency from low to high. Tap times are indicated by black circles.
+  - **Middle Panel:** Displays the relationship between the mean and standard deviation of trajectory lengths, calculated per cycle for each stimulus period.
+  - **Right Panel:** Simulated inter-tap intervals (ITIs) for varying context cues, with trained points marked in yellow.
+  ![PCA and Model Activity Analysis](README_figs/PCA_and_model_activity_stats.png)
+
 
 ### Configuration
 Modify the `config.yaml` file to set up different experimental settings or model parameters.
