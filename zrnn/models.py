@@ -49,7 +49,8 @@ class ZemlianovaRNN(nn.Module):
 
         # add noise to the input
         input_noise = torch.sqrt(torch.tensor(2 * (self.dt / self.tau) * (self.sigma_input ** 2))) * torch.randn_like(inputs)
-        inputs = F.relu(inputs + input_noise)
+        if self.training:
+            inputs = F.relu(inputs + input_noise)
 
         # compute recurrent noise
         rec_noise = torch.sqrt(torch.tensor(2 * (self.tau / self.dt) * (self.sigma_rec ** 2))) * torch.randn_like(hidden)
