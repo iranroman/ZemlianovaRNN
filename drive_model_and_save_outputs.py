@@ -5,22 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import find_peaks, butter, filtfilt
 from zrnn.models import ZemlianovaRNN
+from zrnn.datasets import generate_stimuli
 
 N_RANDOM_PERIODS = 100
-
-def generate_stimuli(period, T_onset, duration=52.0, dt=0.001, one_dur=0.01):
-    t = np.arange(0, duration, dt)  # Time array from 0 to 52 seconds
-    T_tones = np.arange(T_onset, T_onset + 1, period)  # Tone times within the first second after onset
-
-    I_stim = np.zeros_like(t) # here the pulse input is zeros
-
-    I_cc = np.zeros_like(t)
-    I_cc[t >= T_onset] = 0.1 / period  # Continuous cue starting at T_onset
-
-    z_t = np.zeros_like(t)
-    z_t[t >= T_onset] = (np.cos(2 * np.pi * (t[t >= T_onset] - T_onset) / period) + 1) / 2  # Modulated target variable
-
-    return t, I_stim, I_cc, z_t
 
    
 def drive_model_and_save_outputs(model, periods, device, time_steps=52000, discard_steps=2000, save_dir='model_outputs'):
@@ -29,7 +16,7 @@ def drive_model_and_save_outputs(model, periods, device, time_steps=52000, disca
 
     # Generate and process inputs
     for period in periods:
-        t, I_stim, I_cc, z_t = generate_stimuli(period, 0.05)
+        t, I_stim, I_cc, z_t = generate_stimuli(period, 0.05, continuation_phase=True)
         input_signal = np.stack([I_stim, I_cc], axis=1)
 
         # Convert to tensor and send to device
