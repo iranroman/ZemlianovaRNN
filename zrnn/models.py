@@ -58,7 +58,7 @@ class ZemlianovaRNN(nn.Module):
         # Zero out diagonal of w_hh each forward pass
         w_hh_no_diag = self.w_hh * self.zero_diag_mask.to(self.w_hh.device)
         w_hh_no_diag_p = torch.abs(w_hh_no_diag)
-        w_hh_EI = w_hh_no_diag_p * self.EI_mask
+        w_hh_EI = w_hh_no_diag_p * self.EI_mask.to(self.w_hh.device)
 
         # Compute the hidden state
         hidden_input = torch.matmul(inputs, self.w_ih.t())
