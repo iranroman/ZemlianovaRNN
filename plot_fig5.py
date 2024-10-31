@@ -42,7 +42,7 @@ def _plot_a(span: (float, float), grid_length: int, context_cues: [float] = CONT
         ax = axs[i // 3, i % 3]
         data = _load_data(i, load_dir)
         im = _gen_single_plot(data, ax, span, grid_length, center_around_end_point=True)
-        ax.set_title(cc)
+        ax.set_title(f'CC = {cc}')
         if i == len(CONTEXT_CUES) - 1:
             plt.colorbar(im)
     fig.tight_layout()
@@ -56,7 +56,7 @@ def _plot_b(span: (float, float), grid_length: int, times: [int] = TIMES):
         ax = axs[i]
         data = _load_data(i, load_dir)
         im = _gen_single_plot(data, ax, span, grid_length)
-        ax.set_title(time)
+        ax.set_title(f'time = {time} [ms]')
         if i == len(TIMES):
             plt.colorbar(im)
     # TODO add inner subgroups plot
