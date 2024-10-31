@@ -1,0 +1,9 @@
+model:
+  input_dim: 2
+  hidden_dim: 500
+  output_dim: 1
+  tau: 0.01
+  dt: 0.001
+  sigma_rec: 0
+  sigma_input: 0
+  excit_percent: 0.8
