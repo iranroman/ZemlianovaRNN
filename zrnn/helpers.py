@@ -157,18 +157,18 @@ def get_vector_field(model: ZemlianovaRNN,
                      span: (float, float) = (-5, 5),
                      center: (float, float) = (0, 0),
                      time_steps_ms: int = 500,
-                     grid_length: int = 256,
+                     grid_res: int = 256,
                      at_time: int = None,
                      device: str = 'cpu') -> dict:
     from scipy.linalg import norm
     model.to(device)
-    c0_points = torch.linspace(*span, grid_length).to(device) + center[0]
-    c1_points = torch.linspace(*span, grid_length).to(device) + center[1]
+    c0_points = torch.linspace(*span, grid_res).to(device) + center[0]
+    c1_points = torch.linspace(*span, grid_res).to(device) + center[1]
     grid_c0, grid_c1 = torch.meshgrid(c0_points, c1_points, indexing='xy')
     stimulus = generate_stimuli_from_cc(context_cue_amplitude,
                                         continuation_phase=True).to(device)
     i_proj = torch.tensor(trained_pca.transform(initial_neuron_activity), dtype=torch.float32).to(device)
-    i_proj = torch.broadcast_to(i_proj, [grid_length, grid_length, 1, i_proj.shape[-1]]).clone()
+    i_proj = torch.broadcast_to(i_proj, [grid_res, grid_res, 1, i_proj.shape[-1]]).clone()
     dc0, dc1, speeds = [], [], []
     for t in range(time_steps_ms):
         # broadcast the initial conditions to the grid on the projected plane
@@ -197,62 +197,3 @@ def _transform_tensor(tensor:torch.Tensor, pca: PCA, inverse: bool = False) -> t
     shrank = [size[0] * size[0], size[-1]]
     out_func = lambda f: torch.tensor(f(tensor.reshape(shrank).cpu().detach().numpy()), dtype=torch.float32).reshape(size)
     return out_func(pca.transform) if not inverse else out_func(pca.inverse_transform)
-
-
-# def get_vector_field(model: ZemlianovaRNN,
-#                      context_cue_amplitude: float,
-#                      initial_neuron_activity: torch.Tensor,
-#                      trained_pca: PCA,
-#                      bounds: (float, float),
-#                      time_steps_ms: int = 500,
-#                      grid_length: int = 16,
-#                      at_time: int = None) -> dict:
-#     c0_points = np.linspace(bounds[0], bounds[1], grid_length)
-#     c1_points = np.linspace(bounds[0], bounds[1], grid_length)
-#     grid_c0, grid_c1 = np.meshgrid(c0_points, c1_points)
-#     stimulus = generate_stimuli_from_cc(context_cue_amplitude, continuation_phase=True).to(next(model.parameters()).device)
-#     output_shape = [grid_length, grid_length, time_steps_ms]
-#     dc0, dc1, speed = np.empty(output_shape), np.empty(output_shape), np.empty(output_shape)
-#     it = np.nditer(np.empty_like(grid_c0), flags=['multi_index'])
-#     while not it.finished:
-#         _dc0, _dc1, _speed = get_vector_dynamics_on_point(model,
-#                                                           [grid_c0[it.multi_index], grid_c1[it.multi_index]],
-#                                                           stimulus,
-#                                                           initial_neuron_activity,
-#                                                           trained_pca,
-#                                                           time_steps_ms,)
-#         dc0[it.multi_index] = _dc0
-#         dc1[it.multi_index] = _dc1
-#         speed[it.multi_index] = _speed
-#         it.iternext()
-#         out_slice = slice(None) if at_time is None else at_time
-#     return {"dc0": np.moveaxis(dc0, 2, 0)[out_slice],
-#             "dc1": np.moveaxis(dc1, 2, 0)[out_slice],
-#             "speed": np.moveaxis(speed, 2, 0)[out_slice]}
-#
-#
-# def get_vector_dynamics_on_point(model: ZemlianovaRNN,
-#                                  point: (float, float),
-#                                  stimulus: torch.Tensor,
-#                                  initial_neuron_activity: torch.Tensor,
-#                                  trained_pca: PCA,
-#                                  time_steps_ms: int = 500,) -> (np.ndarray, np.ndarray, np.ndarray):
-#     from scipy.linalg import norm
-#     i_proj_t = trained_pca.transform(initial_neuron_activity)
-#     d0, d1, speeds = [], [], []
-#     for t in range(time_steps_ms):
-#         with torch.inference_mode():
-#             i_proj_t[0, :2] = point
-#             i_orig_t = torch.tensor((trained_pca.inverse_transform(i_proj_t)), dtype=torch.float32)
-#             _, i_orig_t = model(stimulus[:, t, :], i_orig_t)
-#             tmp = trained_pca.transform(i_orig_t)
-#             grad_t = (tmp - i_proj_t)[0]
-#             d0.append(grad_t[0]), d1.append(grad_t[1])
-#             speeds.append(norm(grad_t))
-#             i_proj_t = tmp
-#     # return_slice = slice(None) if at_time is None else slice(at_time, at_time + 1)
-#     # if at_time < 0:
-#     #     return_slice = slice(time_steps_ms - 1, time_steps_ms)
-#     return (np.array(d0, dtype=np.float32),
-#             np.array(d1, dtype=np.float32),
-#             np.array(speeds, dtype=np.float32))
