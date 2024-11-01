@@ -145,7 +145,7 @@ def _args() -> ArgumentParser:
     parser.add_argument('-s', '--span', type=float, default=(-5, 5), nargs=2,
                         help='Span of the axes of the plot in the RNN space',
                         metavar=('LOWER_BOUND', 'UPPER_BOUND'))
-    parser.add_argument('-g', '--grid_res', type=int, default=256,
+    parser.add_argument('-g', '--grid_res', type=int, default=128,
                         help='Grid resolution of the plot. RES ** 2 points will be generated',
                         metavar='RES')
     parser.add_argument('-d', '--device', type=str, default='cpu',
