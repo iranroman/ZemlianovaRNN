@@ -16,7 +16,7 @@ def drive_model_and_save_outputs(model, periods, device, time_steps=52000, disca
 
     # Generate and process inputs
     for period in periods:
-        t, I_stim, I_cc, z_t = generate_stimuli(period, 0.05, duration=52.0, continuation_phase=True)
+        t, I_stim, I_cc, z_t = generate_stimuli(period, 0.05, duration=52.0, I_stim_without_clicks=True)
         input_signal = np.stack([I_stim, I_cc], axis=1)
 
         # Convert to tensor and send to device

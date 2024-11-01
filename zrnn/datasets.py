@@ -2,12 +2,12 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-def generate_stimuli(period, T_onset, duration=2.0, dt=0.001, one_dur=0.01, continuation_phase: bool = False):
+def generate_stimuli(period, T_onset, duration=2.0, dt=0.001, one_dur=0.01, I_stim_without_clicks: bool = False):
     t = np.arange(0, duration, dt)
     T_tones = np.arange(0, duration//2, period)  # Tone times from 0 to half of the total duration
         
     I_stim = np.zeros_like(t)
-    if not continuation_phase:
+    if not I_stim_without_clicks:
         for tone in T_tones:
             start_time = T_onset + tone
             end_time = start_time + one_dur

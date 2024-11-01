@@ -39,7 +39,7 @@ def load_model(model_path: str | Path, config_path: Path | str = 'config.yaml', 
 
 def generate_stimuli_from_cc(context_cue_amplitude: float, t_onset_ms: float = .05, *args, **kwargs):
     period = .1 / context_cue_amplitude
-    return torch.tensor(np.array([generate_stimuli(period, t_onset_ms, *args, **kwargs)[1:3]]),
+    return torch.tensor(np.array([generate_stimuli(period, t_onset_ms, **kwargs)[1:3]]),
                         dtype=torch.float).swapaxes(1, 2)
 
 
@@ -55,7 +55,7 @@ def drive_model(model: ZemlianovaRNN,
     rnn_input_tensor = generate_stimuli_from_cc(context_cue_amplitude,
                                                 t_onset_ms=t_onset_ms,
                                                 duration=52,
-                                                continuation_phase=kwargs.get('continuation_phase', True)).to(device)
+                                                I_stim_without_clicks=kwargs.get('I_stim_without_clicks', True)).to(device)
     if initial_neuron_activity is None:
         neuron_state = model.initHidden(1).to(device)
     else:
@@ -166,7 +166,7 @@ def get_vector_field(model: ZemlianovaRNN,
     c1_points = torch.linspace(*span, grid_res).to(device) + center[1]
     grid_c0, grid_c1 = torch.meshgrid(c0_points, c1_points, indexing='xy')
     stimulus = generate_stimuli_from_cc(context_cue_amplitude,
-                                        continuation_phase=True).to(device)
+                                        I_stim_without_clicks=True).to(device)
     i_proj = torch.tensor(trained_pca.transform(initial_neuron_activity), dtype=torch.float32).to(device)
     i_proj = torch.broadcast_to(i_proj, [grid_res, grid_res, 1, i_proj.shape[-1]]).clone()
     dc0, dc1, speeds = [], [], []
