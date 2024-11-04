@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 CONTEXT_CUES = (-.5, -.2, .1, 1., 1.5, 2.)
 TIMES_CONTEXT_CUE = .5
 TIMES = (80, 200, 400)
+TIMES = (40, 90, 180)
 
 
 def _load_data(cc_enum: int, load_dir: Path):
@@ -108,7 +109,6 @@ def _gen_cc_plot_data(model,
 
 def _gen_times_plot_data(model,
                          pca,
-                         initial_neurons_activity,
                          times: [int],
                          context_cue_amplitude: float,
                          span: (float, float) = (-5, 5),
@@ -116,7 +116,7 @@ def _gen_times_plot_data(model,
                          device: str = 'cpu'):
     save_dir = Path('fig_5_data/plot_b')
     save_dir.mkdir(exist_ok=True, parents=True)
-    _, neuron_activities = helpers.drive_model(model,
+    initial_neurons_activity = model.initHidden(1)
     _, neuron_activities = utils.drive_model(model,
                                                      context_cue_amplitude,
                                                      time_steps_ms=times[-1],
@@ -124,8 +124,6 @@ def _gen_times_plot_data(model,
                                                      initial_neuron_activity=initial_neurons_activity,
                                                      device=device)
     trajectory_0, trajectory_1 = pca.transform(neuron_activities).T[:2]
-    end_point = 0 ,0
-    vec_fields = helpers.get_vector_field(model, context_cue_amplitude, initial_neurons_activity, pca, span,
     end_point = 0, 0
     vec_fields = utils.get_vector_field(model, context_cue_amplitude, initial_neurons_activity, pca, span,
                                                 center=end_point,
@@ -191,12 +189,7 @@ def main():
                  span=args.span,
                  grid_res=args.grid_res,)
     if args.type in ('times', 'both'):
-        _gen_times_plot_data(model,
-                             pca,
-                             initial_conditions,
-                             times=args.times,
-                             context_cue_amplitude=args.times_context_cue,
-                             **const_args)
+        _gen_times_plot_data(model, pca, times=args.times, context_cue_amplitude=args.times_context_cue, **const_args)
         _times_plot(times=args.times,
                     span=args.span,
                     grid_res=args.grid_res)
