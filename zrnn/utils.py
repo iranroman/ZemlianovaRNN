@@ -197,5 +197,3 @@ def _transform_tensor(tensor:torch.Tensor, pca: PCA, inverse: bool = False) -> t
     shrank = [size[0] * size[0], size[-1]]
     out_func = lambda f: torch.tensor(f(tensor.reshape(shrank).cpu().detach().numpy()), dtype=torch.float32).reshape(size)
     return out_func(pca.transform) if not inverse else out_func(pca.inverse_transform)
-
-# TODO add fixed point finder
