@@ -23,7 +23,7 @@ def _load_data(cc_enum: int, load_dir: Path):
 
 def _gen_single_plot(data: dict,
                      ax: plt.Axes, span: (float, float),
-                     grid_res: int = 256,
+                     grid_res: int = 128,
                      center_around_end_point: bool = False):
     end_point = 0., 0.
     if center_around_end_point:
@@ -86,7 +86,7 @@ def _gen_cc_plot_data(model,
                       initial_neurons_activity,
                       context_cues: [float],
                       span: (float, float) = (-5, 5),
-                      grid_res: int = 256,
+                      grid_res: int = 128,
                       device: str = 'cpu'):
     save_dir = Path('fig_5_data/plot_a')
     save_dir.mkdir(exist_ok=True, parents=True)
@@ -112,7 +112,7 @@ def _gen_times_plot_data(model,
                          times: [int],
                          context_cue_amplitude: float,
                          span: (float, float) = (-5, 5),
-                         grid_res: int = 256,
+                         grid_res: int = 128,
                          device: str = 'cpu'):
     save_dir = Path('fig_5_data/plot_b')
     save_dir.mkdir(exist_ok=True, parents=True)
