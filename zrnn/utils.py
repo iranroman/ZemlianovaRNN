@@ -157,7 +157,7 @@ def get_vector_field(model: ZemlianovaRNN,
                      span: (float, float) = (-5, 5),
                      center: (float, float) = (0, 0),
                      time_steps_ms: int = 500,
-                     grid_res: int = 256,
+                     grid_res: int = 128,
                      at_time: int = None,
                      device: str = 'cpu') -> dict:
     from scipy.linalg import norm
@@ -197,3 +197,5 @@ def _transform_tensor(tensor:torch.Tensor, pca: PCA, inverse: bool = False) -> t
     shrank = [size[0] * size[0], size[-1]]
     out_func = lambda f: torch.tensor(f(tensor.reshape(shrank).cpu().detach().numpy()), dtype=torch.float32).reshape(size)
     return out_func(pca.transform) if not inverse else out_func(pca.inverse_transform)
+
+# TODO add fixed point finder

@@ -1,7 +1,7 @@
 
 from pathlib import Path
 import numpy as np
-from zrnn import helpers
+from zrnn import utils
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 
@@ -91,6 +91,7 @@ def _gen_cc_plot_data(model,
     save_dir.mkdir(exist_ok=True, parents=True)
     for i, cc in enumerate(context_cues):
         _, neuron_activities = helpers.drive_model(model,
+        _, neuron_activities = utils.drive_model(model,
                                                          cc,
                                                          time_steps_ms=500,
                                                          discard_steps=0,
@@ -98,7 +99,7 @@ def _gen_cc_plot_data(model,
                                                          device=device)
         trajectory_0, trajectory_1 = pca.transform(neuron_activities).T[:2]
         end_point = trajectory_0[-1], trajectory_1[-1]
-        vec_field = helpers.get_vector_field(model, cc, initial_neurons_activity, pca, span, center=end_point,
+        vec_field = utils.get_vector_field(model, cc, initial_neurons_activity, pca, span, center=end_point,
                                                    grid_res=grid_res, at_time=-1, device=device)
         vec_field.update({"trajectory0": trajectory_0, "trajectory1": trajectory_1})
         for k, v in vec_field.items():
@@ -116,6 +117,7 @@ def _gen_times_plot_data(model,
     save_dir = Path('fig_5_data/plot_b')
     save_dir.mkdir(exist_ok=True, parents=True)
     _, neuron_activities = helpers.drive_model(model,
+    _, neuron_activities = utils.drive_model(model,
                                                      context_cue_amplitude,
                                                      time_steps_ms=times[-1],
                                                      discard_steps=0,
@@ -124,6 +126,8 @@ def _gen_times_plot_data(model,
     trajectory_0, trajectory_1 = pca.transform(neuron_activities).T[:2]
     end_point = 0 ,0
     vec_fields = helpers.get_vector_field(model, context_cue_amplitude, initial_neurons_activity, pca, span,
+    end_point = 0, 0
+    vec_fields = utils.get_vector_field(model, context_cue_amplitude, initial_neurons_activity, pca, span,
                                                 center=end_point,
                                                 time_steps_ms=times[-1], grid_res=grid_res, device=device)
 
@@ -169,6 +173,9 @@ def main():
     model = helpers.load_model(model_path=args.model, config_path=args.config)
     pca, phases_df = helpers.get_principal_components(model)
     initial_conditions = helpers.generate_initial_neuron_activity(phases_df)
+    model = utils.load_model(model_path=args.model, config_path=args.config)
+    pca, phases_df = utils.get_principal_components(model)
+    initial_conditions = utils.generate_initial_neuron_activity(phases_df)
     const_args = dict(
         span=args.span,
         grid_res=args.grid_res,
