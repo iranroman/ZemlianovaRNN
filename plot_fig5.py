@@ -1,4 +1,5 @@
 
+import sys
 from pathlib import Path
 import numpy as np
 from zrnn import utils
@@ -8,8 +9,12 @@ from argparse import ArgumentParser
 
 CONTEXT_CUES = (-.5, -.2, .1, 1., 1.5, 2.)
 TIMES_CONTEXT_CUE = .5
-TIMES = (80, 200, 400)
 TIMES = (40, 90, 180)
+
+
+def _print_message(message: str):
+    sys.stdout.write(f'{message}')
+    sys.stdout.flush()
 
 
 def _load_data(cc_enum: int, load_dir: Path):
@@ -90,8 +95,9 @@ def _gen_cc_plot_data(model,
                       device: str = 'cpu'):
     save_dir = Path('fig_5_data/plot_a')
     save_dir.mkdir(exist_ok=True, parents=True)
+    _print_message('\nGenerating data for the context cue plot...')
     for i, cc in enumerate(context_cues):
-        _, neuron_activities = helpers.drive_model(model,
+        _print_message(f'\rGenerating data for the context cue plot, plot {i + 1} / {len(context_cues)}')
         _, neuron_activities = utils.drive_model(model,
                                                          cc,
                                                          time_steps_ms=500,
@@ -105,6 +111,7 @@ def _gen_cc_plot_data(model,
         vec_field.update({"trajectory0": trajectory_0, "trajectory1": trajectory_1})
         for k, v in vec_field.items():
             np.save(save_dir.joinpath(f'{k}_{i}.npy'), v)
+    _print_message('\nDone!')
 
 
 def _gen_times_plot_data(model,
@@ -114,6 +121,7 @@ def _gen_times_plot_data(model,
                          span: (float, float) = (-5, 5),
                          grid_res: int = 128,
                          device: str = 'cpu'):
+    _print_message('\nGenerating data for the timepoints plot...')
     save_dir = Path('fig_5_data/plot_b')
     save_dir.mkdir(exist_ok=True, parents=True)
     initial_neurons_activity = model.initHidden(1)
@@ -130,11 +138,13 @@ def _gen_times_plot_data(model,
                                                 time_steps_ms=times[-1], grid_res=grid_res, device=device)
 
     for i, time in enumerate(times):
+        _print_message(f'\rGenerating data for the timepoints plot, plot {i + 1} / {len(times)}')
         tmp_field = {k: v[time - 1] for k, v in vec_fields.items()}
         tmp_trajectory_0, tmp_trajectory_1 = trajectory_0[:time], trajectory_1[:time]
         tmp_field.update({"trajectory0": tmp_trajectory_0, "trajectory1": tmp_trajectory_1})
         for k, v in tmp_field.items():
             np.save(save_dir.joinpath(f'{k}_{i}.npy'), v)
+    _print_message('\nDone!')
 
 
 def _args() -> ArgumentParser:
@@ -168,11 +178,10 @@ def _args() -> ArgumentParser:
 
 def main():
     args = _args().parse_args()
-    model = helpers.load_model(model_path=args.model, config_path=args.config)
-    pca, phases_df = helpers.get_principal_components(model)
-    initial_conditions = helpers.generate_initial_neuron_activity(phases_df)
     model = utils.load_model(model_path=args.model, config_path=args.config)
+    _print_message('Calculating principal components...')
     pca, phases_df = utils.get_principal_components(model)
+    _print_message('\nDone!')
     initial_conditions = utils.generate_initial_neuron_activity(phases_df)
     const_args = dict(
         span=args.span,
