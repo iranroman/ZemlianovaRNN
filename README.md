@@ -54,6 +54,15 @@ This generates detailed plots illustrating the normalized firing rates and PCA t
   - **Right Panel:** Simulated inter-tap intervals (ITIs) for varying context cues, with trained points marked in yellow.
   ![PCA and Model Activity Analysis](README_figs/PCA_and_model_activity_stats.png)
 
+```bash
+python plot_fig5.py
+```
+This generates plots of the RNN dynamics (aiming to reproduce figure 5 in the paper):
+
+- **Different context cue values:** Two dimensional depiction of the RNN dynamics for different values of context cue on a projection plane that is chosen by principal components analysis. Red curves indicate the trajectories, and the heatmap shows the speed magnitude. 
+  ![RNN Dynamics CC Values](README_figs/fig_5a.png)
+- **Oscillatory trajectory:** Here the same plot is shown on different times for the same trajectory, simulated with context cue amplitude of 0.5, for which the outcome is in the oscillatory regime. 
+  ![RNN Dynamics CC Values](README_figs/fig_5b.png)
 
 ### Configuration
 Modify the `config.yaml` file to set up different experimental settings or model parameters.

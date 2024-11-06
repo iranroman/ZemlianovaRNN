@@ -32,7 +32,7 @@ def train(model, dataloader, optimizer, criterion, config, device):
             total_loss += loss.item()
 
         avg_loss = total_loss / len(dataloader)
-        print(f'Epoch {epoch+1}/{config['training']['epochs']}, Loss: {avg_loss}')
+        print(f"Epoch {epoch+1}/{config['training']['epochs']}, Loss: {avg_loss}")
 
         if avg_loss < min_loss:
             min_loss = avg_loss

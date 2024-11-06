@@ -5,9 +5,9 @@ import torch.nn.functional as F
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class ZemlianovaRNN(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, dt, tau, excit_percent, sigma_rec=0.01, sigma_input = 0.01):
+    def __init__(self, input_dim, hidden_dim, output_dim, dt, tau, excit_percent, sigma_rec=0.01, sigma_input = 0.01):
         super().__init__()
-        self.hidden_size = hidden_size
+        self.hidden_size = hidden_dim
         self.dt = dt
         self.tau = tau
         self.excit_percent = excit_percent
@@ -15,24 +15,24 @@ class ZemlianovaRNN(nn.Module):
         self.sigma_input = sigma_input
 
         # Initialize weights and biases for input to hidden layer
-        self.w_ih = nn.Parameter(torch.Tensor(hidden_size, input_size))
-        self.b_ih = nn.Parameter(torch.Tensor(hidden_size))
+        self.w_ih = nn.Parameter(torch.Tensor(hidden_dim, input_dim))
+        self.b_ih = nn.Parameter(torch.Tensor(hidden_dim))
 
         # Initialize weights and biases for hidden to hidden layer
-        self.w_hh = nn.Parameter(torch.Tensor(hidden_size, hidden_size))
-        self.b_hh = nn.Parameter(torch.Tensor(hidden_size))
+        self.w_hh = nn.Parameter(torch.Tensor(hidden_dim, hidden_dim))
+        self.b_hh = nn.Parameter(torch.Tensor(hidden_dim))
 
         # Initialize weights and biases for hidden to output layer
-        self.w_ho = nn.Parameter(torch.Tensor(output_size, hidden_size))
-        self.b_ho = nn.Parameter(torch.Tensor(output_size))
+        self.w_ho = nn.Parameter(torch.Tensor(output_dim, hidden_dim))
+        self.b_ho = nn.Parameter(torch.Tensor(output_dim))
 
         # Initialize all weights and biases
         self.init_weights()
 
         # Create masks for zeroing diagonal of w_hh and contain EI ratio
-        self.zero_diag_mask = torch.ones(hidden_size, hidden_size) - torch.eye(hidden_size)
-        self.EI_mask = torch.ones(hidden_size).to(device)
-        self.EI_mask[int(self.excit_percent * hidden_size):] = -1
+        self.zero_diag_mask = torch.ones(hidden_dim, hidden_dim) - torch.eye(hidden_dim)
+        self.EI_mask = torch.ones(hidden_dim).to(device)
+        self.EI_mask[int(self.excit_percent * hidden_dim):] = -1
 
 
     def init_weights(self):
@@ -49,7 +49,8 @@ class ZemlianovaRNN(nn.Module):
 
         # add noise to the input
         input_noise = torch.sqrt(torch.tensor(2 * (self.dt / self.tau) * (self.sigma_input ** 2))) * torch.randn_like(inputs)
-        inputs = F.relu(inputs + input_noise)
+        if self.training:
+            inputs = F.relu(inputs + input_noise)
 
         # compute recurrent noise
         rec_noise = torch.sqrt(torch.tensor(2 * (self.tau / self.dt) * (self.sigma_rec ** 2))) * torch.randn_like(hidden)
@@ -57,7 +58,7 @@ class ZemlianovaRNN(nn.Module):
         # Zero out diagonal of w_hh each forward pass
         w_hh_no_diag = self.w_hh * self.zero_diag_mask.to(self.w_hh.device)
         w_hh_no_diag_p = torch.abs(w_hh_no_diag)
-        w_hh_EI = w_hh_no_diag_p * self.EI_mask
+        w_hh_EI = w_hh_no_diag_p * self.EI_mask.to(self.w_hh.device)
 
         # Compute the hidden state
         hidden_input = torch.matmul(inputs, self.w_ih.t())
