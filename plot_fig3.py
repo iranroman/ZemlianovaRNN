@@ -84,7 +84,7 @@ def _get_plot_f(ax, iccs=(0.197, 0.3, 0.5, 0.8, 1.2)):
 
 
 def main():
-    fig, axs = plt.subplots(nrows=2, ncols=3, figsize=(1000/96, 1000/96), dpi=96)
+    fig, axs = plt.subplots(nrows=2, ncols=3, figsize=(1000/96, 800/96), dpi=96)
     _get_plots_abc(axs[0])
     _get_plot_d(axs[1, 0])
     _get_plot_e(axs[1, 1])
