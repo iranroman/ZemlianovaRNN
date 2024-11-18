@@ -63,7 +63,7 @@ This generates plots reduced model analysis, similar to figure 3 in the paper:
 - **Top row:** The activity of the reduced model varibles simulated for different context cues.
 - **Bottom row:** 
   - **Left plot:** Oscillations periods vs context cue.
-  - **Central plot:** Bifurcation diagram. Red points indicate stable fixed points, while white denote unstable ones. In the oscillatory regime, the max and min z are plotted in green. dashed lines indicate the critical, bifurcation points, and dotted lines correspond to the simulations plotted above.
+  - **Central plot:** Bifurcation diagram. Red points indicate stable fixed points, while black denote unstable ones. In the oscillatory regime, the max and min z are plotted in green. dashed lines indicate the critical, bifurcation points, and dotted lines correspond to the simulations plotted above.
   - **Right Plot:** Different (0.197, 0.3, 0.5, 0.8 and 1.2) oscillatory trajectories, with color indicating the periods. 
     
 ```bash
