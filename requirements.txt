@@ -8,3 +8,5 @@ pandas~=2.2.3
 scikit-learn~=1.5.2
 yaml~=0.2.5
 scipy~=1.14.1
+numdifftools~=0.9.41
+torchdiffeq~=0.2.4
