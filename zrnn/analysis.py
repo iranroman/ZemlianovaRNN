@@ -90,12 +90,3 @@ def solver(params, initial_conditions, t_final, method='rk4'):
 def get_oscillation_period(solution):
     from scipy.signal import find_peaks
     return np.diff(find_peaks(solution[500:, 2], height=0)[0]).mean()
-
-
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    p = DEF_PARAMS
-    p['I_cc'] = 0.194
-    sol = solver(p, (0.75, 0.75, -0.01), 5)
-    plt.plot(sol[500:, -1])
-    plt.show()
